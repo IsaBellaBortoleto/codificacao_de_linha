@@ -79,9 +79,9 @@ sequências especiais. A escolha depende de quantos pulsos não-zero ocorreram d
 a **última substituição**:
 
 | Pulsos não-zero desde última substituição | Substituição aplicada |
-|---|---|
+|-----|-----|
 | **Ímpar** | `0 0 0 V` |
-| **Par** | `B 0 0 V` |
+| **Par**   | `B 0 0 V` |
 
 Onde:
 - **V (Violation):** pulso com a **mesma polaridade** do último pulso não-zero — isso viola
@@ -92,13 +92,13 @@ Onde:
 ### Exemplo prático
 
 ```
-Bits de entrada:   1  0  0  0  0  0  0  0  1  1
-AMI raw:          +1  0  0  0  0  0  0  0 -1 +1
-                      └────────────┘ └──────────┘
+Bits de entrada:   1  0  0  0  0  0  0  0  0  1  1
+AMI raw:          +1  0  0  0  0  0  0  0  0  -  -
+                      └─────────┘ └─────────┘
                         grupo de 8 zeros = 2× grupos de 4
 
-Após HDB3:        +1  0  0  0 +V  -B  0  0 -V -1 +1
-                      └─000V─┘ └──B00V──┘
+Após HDB3:        +1  0  0  0 +V  -B  0  0 -V +1 -1
+                      └─000V────┘ └───B00V──┘
                    (1 pulso antes → ímpar → 000V)
                    (após V, count=0 → par → B00V)
 ```
