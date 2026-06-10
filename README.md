@@ -362,14 +362,14 @@ python interface.py
 
 | Critério | Implementado em | Status |
 |---|---|---|
-| T1 — Interface gráfica com todos os campos | `interface.py` | ✅ |
-| T2 — Forma de onda em ambos os lados | `interface.py` (matplotlib) | ✅ |
-| T3 — Comunicação entre computadores | ESP-NOW (Master ↔ Slaves) | ✅ |
-| T4 — Criptografia | XOR simétrico em `interface.py` e `.ino` | ✅ |
-| T5 — ASCII estendido → binário | `text_to_binary()` em `interface.py` | ✅ |
-| T6 — Aplicação do algoritmo HDB3 | `encode_hdb3()` em `interface.py` + `encodeHDB3()` no Master | ✅ |
-| T7 — Envio pela rede | ESP-NOW via `esp_now_send()` | ✅ |
-| T8 — Processo inverso no receptor | `decode_hdb3()` no Slave + `interface.py` | ✅ |
+| T1 — Interface gráfica com todos os campos | `interface.py` | ✓ |
+| T2 — Forma de onda em ambos os lados | `interface.py` (matplotlib) | ✓ |
+| T3 — Comunicação entre computadores | ESP-NOW (Master ↔ Slaves) | ✓ |
+| T4 — Criptografia | XOR simétrico em `interface.py` e `.ino` | ✓ |
+| T5 — ASCII estendido → binário | `text_to_binary()` em `interface.py` | ✓ |
+| T6 — Aplicação do algoritmo HDB3 | `encode_hdb3()` em `interface.py` + `encodeHDB3()` no Master | ✓ |
+| T7 — Envio pela rede | ESP-NOW via `esp_now_send()` | ✓ |
+| T8 — Processo inverso no receptor | `decode_hdb3()` no Slave + `interface.py` | ✓ |
 
 ---
 

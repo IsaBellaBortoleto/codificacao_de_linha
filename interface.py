@@ -408,7 +408,7 @@ class HDB3App(ctk.CTk):
         recv_labels = [
             ("recv_hdb3",    "📥 HDB3 recebido:"),
             ("recv_bits",    "⚙  Bits decodificados:"),
-            ("recv_decoded", "✅ Mensagem recuperada:"),
+            ("recv_decoded", "✓ Mensagem recuperada:"),
         ]
         for i, (key, lbl) in enumerate(recv_labels):
             ctk.CTkLabel(recv_frame, text=lbl, text_color=PALETTE["subtext"],
