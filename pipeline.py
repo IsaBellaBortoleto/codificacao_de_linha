@@ -34,7 +34,7 @@ except ImportError:
 
 
 BAUD_RATE = 115200
-MAX_SIMBOLOS_HDB3 = 240
+MAX_SIMBOLOS_HDB3 = 200
 
 
 def _chave_para_texto(chave: bytes) -> str:
@@ -54,9 +54,18 @@ def _lista_bits_para_binario(bits: list[int]) -> str:
 
 def _normalizar_hdb3(valor) -> list[int]:
     if isinstance(valor, str):
+        if all(simbolo in "+-0" for simbolo in valor):
+            mapa = {"+": 1, "-": -1, "0": 0}
+            return [mapa[simbolo] for simbolo in valor]
+
         valor = ast.literal_eval(valor)
 
     return [int(simbolo) for simbolo in valor]
+
+
+def _hdb3_para_texto(sinal_hdb3: list[int]) -> str:
+    mapa = {1: "+", -1: "-", 0: "0"}
+    return "".join(mapa[int(simbolo)] for simbolo in sinal_hdb3)
 
 
 def processar_emissao(texto: str, chave: bytes) -> dict:
@@ -125,7 +134,7 @@ def montar_payload_envio(resultado_emissao: dict) -> dict:
 
     return {
         "type": "send",
-        "hdb3": sinal_hdb3,
+        "hdb3": _hdb3_para_texto(sinal_hdb3),
         "len": len(sinal_hdb3),
     }
 
@@ -168,7 +177,8 @@ def enviar_emissao_serial(porta: str, resultado_emissao: dict, baud: int = BAUD_
 
     with abrir_serial(porta, baud) as conexao:
         conexao.timeout = 2
-        conexao.write((json.dumps(payload) + "\n").encode("utf-8"))
+        linha_envio = json.dumps(payload, separators=(",", ":")) + "\n"
+        conexao.write(linha_envio.encode("utf-8"))
         linha = conexao.readline().decode("utf-8", errors="ignore").strip()
 
     if not linha:
