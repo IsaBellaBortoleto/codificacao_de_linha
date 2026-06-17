@@ -17,53 +17,37 @@ def encode_hdb3(bits: list[int]) -> list[int]:
         V = mesma polaridade do último pulso não-zero  (viola AMI → marcador)
         B = polaridade oposta ao último pulso não-zero (segue AMI → equilíbrio DC)
     """
-    # Passo 1: AMI raw
-    raw = []
-    polarity = +1
-    for b in bits:
-        if b == 0:
-            raw.append(0)
-        else:
-            raw.append(polarity)
-            polarity = -polarity
-
-    # Passo 2: substituição HDB3
-    result = raw[:]
-    last_pol         = +1  # polaridade do último pulso não-zero
-    non_zero_since   =  0  # contador desde última substituição
+    result = []
+    last_pol = -1
+    non_zero_since = 0
 
     i = 0
-    while i < len(result):
-        # Detectar grupo de 4 zeros consecutivos
-        if i + 3 < len(raw) and raw[i]==0 and raw[i+1]==0 and raw[i+2]==0 and raw[i+3]==0:
-            V = last_pol  # violação = mesma polaridade do último
+    while i < len(bits):
+        if bits[i] == 1:
+            pulso = -last_pol
+            result.append(pulso)
+            last_pol = pulso
+            non_zero_since += 1
+            i += 1
+            continue
 
-            if non_zero_since % 2 == 1:
-                # ímpar → 000V
-                result[i]   = 0
-                result[i+1] = 0
-                result[i+2] = 0
-                result[i+3] = V
-            else:
-                # par → B00V
+        if i + 3 < len(bits) and bits[i:i+4] == [0, 0, 0, 0]:
+            # Substituição HDB3 de quatro zeros consecutivos.
+            # Se precisar de B, o V tem a mesma polaridade de B para
+            # formar a violação detectável no receptor.
+            if non_zero_since % 2 == 0:
                 B = -last_pol
-                result[i]   = B
-                result[i+1] = 0
-                result[i+2] = 0
-                result[i+3] = V
-                last_pol       = B
-                non_zero_since += 1  # B conta como pulso não-zero
+                V = B
+                result.extend([B, 0, 0, V])
+                last_pol = V
+            else:
+                V = last_pol
+                result.extend([0, 0, 0, V])
 
-            last_pol       = V
-            non_zero_since = 0  # reset após substituição
+            non_zero_since = 0
             i += 4
         else:
-            result[i] = raw[i]
-            if raw[i] != 0:
-                last_pol = raw[i]
-                non_zero_since += 1
+            result.append(0)
             i += 1
 
     return result
-
-

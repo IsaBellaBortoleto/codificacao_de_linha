@@ -41,7 +41,12 @@ void onReceive(const esp_now_recv_info_t *info, const uint8_t *data, int dataLen
   Serial.print("{\"from\":\"");
   Serial.print(macStr);
   Serial.print("\",\"payload\":\"");
-  Serial.print(buf);
+  for (int i = 0; i < dataLen; i++) {
+    if (buf[i] == '"' || buf[i] == '\\') {
+      Serial.print('\\');
+    }
+    Serial.print(buf[i]);
+  }
   Serial.println("\"}");
 }
 

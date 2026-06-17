@@ -131,6 +131,12 @@ def montar_payload_envio(resultado_emissao: dict) -> dict:
 
 
 def interpretar_payload_recebido(payload: dict, chave: bytes) -> dict:
+    if "payload" in payload:
+        payload = json.loads(payload["payload"])
+
+    if payload.get("type") == "send":
+        payload["type"] = "received"
+
     if payload.get("type") != "received":
         raise ValueError("Payload recebido nao e do tipo 'received'.")
 

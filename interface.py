@@ -264,7 +264,7 @@ class InterfaceHDB3(tk.Tk):
                 break
 
     def _tratar_payload_recebido(self, payload):
-        if payload.get("type") != "received":
+        if payload.get("type") != "received" and "payload" not in payload:
             self.status_recepcao.set("Mensagem da ESP: " + str(payload))
             return
 
