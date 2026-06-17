@@ -66,6 +66,7 @@ def processar_emissao(texto: str, chave: bytes) -> dict:
     """
     chave_texto = _chave_para_texto(chave)
 
+    binario_original = texto_para_binario(texto)
     texto_criptografado = criptografar(texto, chave_texto)
     binario = texto_para_binario(texto_criptografado)
     bits = _binario_para_lista_bits(binario)
@@ -80,6 +81,7 @@ def processar_emissao(texto: str, chave: bytes) -> dict:
     return {
         "texto_original": texto,
         "chave": chave,
+        "binario_original": binario_original,
         "texto_criptografado": texto_criptografado,
         "binario": binario,
         "bits": bits,

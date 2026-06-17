@@ -56,7 +56,7 @@ class InterfaceHDB3(tk.Tk):
         self.chave_entry.insert(0, "internet explorer")
         self.chave_entry.grid(row=1, column=1, sticky="ew", padx=(0, 10))
 
-        ttk.Label(topo, text="Porta ESP master:").grid(row=0, column=2, sticky="w")
+        ttk.Label(topo, text="Porta ESP slave:").grid(row=0, column=2, sticky="w")
         self.porta_envio_combo = ttk.Combobox(topo, values=self._listar_portas(), width=18)
         self.porta_envio_combo.grid(row=1, column=2, sticky="ew", padx=(0, 10))
 
@@ -72,18 +72,29 @@ class InterfaceHDB3(tk.Tk):
 
         topo.columnconfigure(0, weight=1)
 
-        saida = ttk.LabelFrame(self.aba_emissao, text="Etapas da emissao", padding=10)
+        saida = ttk.Notebook(self.aba_emissao)
         saida.pack(fill="both", expand=True, padx=5, pady=5)
-        saida.columnconfigure(0, weight=1)
-        saida.columnconfigure(1, weight=1)
-        saida.rowconfigure(1, weight=1)
-        saida.rowconfigure(3, weight=1)
+
+        aba_textos = ttk.Frame(saida, padding=10)
+        aba_binarios = ttk.Frame(saida, padding=10)
+        aba_hdb3 = ttk.Frame(saida, padding=10)
+
+        saida.add(aba_textos, text="Texto")
+        saida.add(aba_binarios, text="Binarios")
+        saida.add(aba_hdb3, text="HDB3")
+
+        for aba in (aba_textos, aba_binarios, aba_hdb3):
+            aba.columnconfigure(0, weight=1)
+            aba.columnconfigure(1, weight=1)
+            aba.rowconfigure(1, weight=1)
+            aba.rowconfigure(3, weight=1)
 
         self.campos_emissao = {}
-        self._criar_campo_saida(saida, self.campos_emissao, "Texto original", "texto_original", 0, 0)
-        self._criar_campo_saida(saida, self.campos_emissao, "Texto criptografado", "texto_criptografado", 0, 1)
-        self._criar_campo_saida(saida, self.campos_emissao, "Binario", "binario", 2, 0)
-        self._criar_campo_saida(saida, self.campos_emissao, "Sinal HDB3", "sinal_hdb3", 2, 1)
+        self._criar_campo_saida(aba_textos, self.campos_emissao, "Texto original", "texto_original", 0, 0)
+        self._criar_campo_saida(aba_textos, self.campos_emissao, "Texto criptografado", "texto_criptografado", 0, 1)
+        self._criar_campo_saida(aba_binarios, self.campos_emissao, "Binario original", "binario_original", 0, 0)
+        self._criar_campo_saida(aba_binarios, self.campos_emissao, "Binario criptografado", "binario", 0, 1)
+        self._criar_campo_saida(aba_hdb3, self.campos_emissao, "Sinal HDB3", "sinal_hdb3", 0, 0)
 
         self.status_envio = tk.StringVar(value="Pronto.")
         ttk.Label(self.aba_emissao, textvariable=self.status_envio).pack(fill="x", padx=8)
@@ -92,10 +103,10 @@ class InterfaceHDB3(tk.Tk):
         self._plotar_hdb3(self.eixo_envio, self.canvas_envio, [], "Sinal HDB3 - emissao")
 
     def _criar_aba_recepcao(self):
-        topo = ttk.LabelFrame(self.aba_recepcao, text="Receber da ESP slave", padding=10)
+        topo = ttk.LabelFrame(self.aba_recepcao, text="Receber da ESP master", padding=10)
         topo.pack(fill="x", padx=5, pady=5)
 
-        ttk.Label(topo, text="Porta ESP slave:").grid(row=0, column=0, sticky="w")
+        ttk.Label(topo, text="Porta ESP master:").grid(row=0, column=0, sticky="w")
         self.porta_recepcao_combo = ttk.Combobox(topo, values=self._listar_portas(), width=20)
         self.porta_recepcao_combo.grid(row=1, column=0, sticky="ew", padx=(0, 10))
 
@@ -174,6 +185,7 @@ class InterfaceHDB3(tk.Tk):
     def _mostrar_emissao(self, resultado):
         self._preencher_campo(self.campos_emissao, "texto_original", resultado["texto_original"])
         self._preencher_campo(self.campos_emissao, "texto_criptografado", resultado["texto_criptografado"])
+        self._preencher_campo(self.campos_emissao, "binario_original", resultado["binario_original"])
         self._preencher_campo(self.campos_emissao, "binario", resultado["binario"])
         self._preencher_campo(
             self.campos_emissao,
@@ -195,22 +207,22 @@ class InterfaceHDB3(tk.Tk):
 
         porta = self.porta_envio_combo.get().strip()
         if not porta:
-            messagebox.showwarning("Atencao", "Selecione a porta serial da ESP master.")
+            messagebox.showwarning("Atencao", "Selecione a porta serial da ESP slave.")
             return
 
         try:
             resposta = enviar_emissao_serial(porta, self.resultado_emissao)
             if resposta.get("status") == "sem_resposta":
-                self.status_envio.set("Enviado, mas sem resposta da ESP master.")
+                self.status_envio.set("Enviado, mas sem resposta da ESP slave.")
             else:
-                self.status_envio.set("Resposta da ESP master: " + str(resposta))
+                self.status_envio.set("Resposta da ESP slave: " + str(resposta))
         except Exception as erro:
             messagebox.showerror("Erro no envio serial", str(erro))
 
     def _iniciar_recepcao(self):
         porta = self.porta_recepcao_combo.get().strip()
         if not porta:
-            messagebox.showwarning("Atencao", "Selecione a porta serial da ESP slave.")
+            messagebox.showwarning("Atencao", "Selecione a porta serial da ESP master.")
             return
 
         try:
@@ -229,7 +241,7 @@ class InterfaceHDB3(tk.Tk):
             return
 
         self.recebendo = True
-        self.status_recepcao.set("Aguardando dados da ESP slave...")
+        self.status_recepcao.set("Aguardando dados da ESP master...")
 
         thread = threading.Thread(target=self._loop_recepcao, daemon=True)
         thread.start()
@@ -264,7 +276,7 @@ class InterfaceHDB3(tk.Tk):
             return
 
         self._mostrar_recepcao(resultado)
-        self.status_recepcao.set("Mensagem recebida da ESP slave.")
+        self.status_recepcao.set("Mensagem recebida da ESP master.")
 
     def _mostrar_recepcao(self, resultado):
         self._preencher_campo(
