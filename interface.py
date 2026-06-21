@@ -22,7 +22,8 @@ class InterfaceHDB3(tk.Tk):
         super().__init__()
 
         self.title("Comunicacao de Dados - HDB3")
-        self.geometry("1100x760")
+        self.geometry("1280x860")
+        self.minsize(1100, 760)
 
         self.resultado_emissao = None
         self.serial_recepcao = None
@@ -56,18 +57,33 @@ class InterfaceHDB3(tk.Tk):
         self.chave_entry.insert(0, "internet explorer")
         self.chave_entry.grid(row=1, column=1, sticky="ew", padx=(0, 10))
 
-        ttk.Label(topo, text="Porta ESP slave:").grid(row=0, column=2, sticky="w")
-        self.porta_envio_combo = ttk.Combobox(topo, values=self._listar_portas(), width=18)
-        self.porta_envio_combo.grid(row=1, column=2, sticky="ew", padx=(0, 10))
+        ttk.Label(topo, text="Usar slave:").grid(row=0, column=2, sticky="w")
+        self.slave_selecionada = tk.StringVar(value="Slave 1")
+        self.slave_combo = ttk.Combobox(
+            topo,
+            values=["Slave 1", "Slave 2"],
+            textvariable=self.slave_selecionada,
+            state="readonly",
+            width=10,
+        )
+        self.slave_combo.grid(row=1, column=2, sticky="ew", padx=(0, 10))
+
+        ttk.Label(topo, text="Porta Slave 1:").grid(row=0, column=3, sticky="w")
+        self.porta_slave_1_combo = ttk.Combobox(topo, values=self._listar_portas(), width=18)
+        self.porta_slave_1_combo.grid(row=1, column=3, sticky="ew", padx=(0, 10))
+
+        ttk.Label(topo, text="Porta Slave 2:").grid(row=0, column=4, sticky="w")
+        self.porta_slave_2_combo = ttk.Combobox(topo, values=self._listar_portas(), width=18)
+        self.porta_slave_2_combo.grid(row=1, column=4, sticky="ew", padx=(0, 10))
 
         ttk.Button(topo, text="Atualizar portas", command=self._atualizar_portas).grid(
-            row=1, column=3, padx=(0, 10)
+            row=1, column=5, padx=(0, 10)
         )
         ttk.Button(topo, text="Processar", command=self._processar_emissao).grid(
-            row=1, column=4, padx=(0, 10)
+            row=1, column=6, padx=(0, 10)
         )
         ttk.Button(topo, text="Enviar para ESP", command=self._enviar_para_esp).grid(
-            row=1, column=5
+            row=1, column=7
         )
 
         topo.columnconfigure(0, weight=1)
@@ -148,7 +164,7 @@ class InterfaceHDB3(tk.Tk):
     def _criar_campo_saida(self, parent, colecao, titulo, chave, linha, coluna):
         ttk.Label(parent, text=titulo + ":").grid(row=linha, column=coluna, sticky="w")
 
-        campo = ScrolledText(parent, height=5, wrap="word")
+        campo = ScrolledText(parent, height=4, wrap="word")
         campo.grid(row=linha + 1, column=coluna, sticky="nsew", padx=5, pady=(0, 8))
         campo.configure(state="disabled")
 
@@ -158,7 +174,7 @@ class InterfaceHDB3(tk.Tk):
         frame = ttk.Frame(parent, padding=8)
         frame.pack(fill="both", expand=True)
 
-        figura = Figure(figsize=(9, 2.8), dpi=100)
+        figura = Figure(figsize=(10, 3.4), dpi=100, constrained_layout=True)
         eixo = figura.add_subplot(111)
         canvas = FigureCanvasTkAgg(figura, master=frame)
         canvas.get_tk_widget().pack(fill="both", expand=True)
@@ -205,17 +221,21 @@ class InterfaceHDB3(tk.Tk):
             if self.resultado_emissao is None:
                 return
 
-        porta = self.porta_envio_combo.get().strip()
+        porta = self._porta_slave_selecionada()
         if not porta:
-            messagebox.showwarning("Atencao", "Selecione a porta serial da ESP slave.")
+            messagebox.showwarning("Atencao", "Selecione a porta serial da slave escolhida.")
             return
 
         try:
             resposta = enviar_emissao_serial(porta, self.resultado_emissao)
             if resposta.get("status") == "sem_resposta":
-                self.status_envio.set("Enviado, mas sem resposta da ESP slave.")
+                self.status_envio.set(
+                    f"Enviado pela {self.slave_selecionada.get()}, mas sem resposta."
+                )
             else:
-                self.status_envio.set("Resposta da ESP slave: " + str(resposta))
+                self.status_envio.set(
+                    f"Resposta da {self.slave_selecionada.get()}: " + str(resposta)
+                )
         except Exception as erro:
             messagebox.showerror("Erro no envio serial", str(erro))
 
@@ -276,7 +296,7 @@ class InterfaceHDB3(tk.Tk):
             return
 
         self._mostrar_recepcao(resultado)
-        self.status_recepcao.set("Mensagem recebida da ESP master.")
+        self.status_recepcao.set("Mensagem recebida de uma ESP slave via master.")
 
     def _mostrar_recepcao(self, resultado):
         self._preencher_campo(
@@ -314,8 +334,15 @@ class InterfaceHDB3(tk.Tk):
 
     def _atualizar_portas(self):
         portas = self._listar_portas()
-        self.porta_envio_combo.configure(values=portas)
+        self.porta_slave_1_combo.configure(values=portas)
+        self.porta_slave_2_combo.configure(values=portas)
         self.porta_recepcao_combo.configure(values=portas)
+
+    def _porta_slave_selecionada(self):
+        if self.slave_selecionada.get() == "Slave 1":
+            return self.porta_slave_1_combo.get().strip()
+
+        return self.porta_slave_2_combo.get().strip()
 
     def _preencher_campo(self, colecao, chave, valor):
         campo = colecao[chave]
@@ -332,6 +359,7 @@ class InterfaceHDB3(tk.Tk):
         eixo.set_ylim(-1.5, 1.5)
         eixo.set_yticks([-1, 0, 1])
         eixo.grid(True, linestyle="--", alpha=0.4)
+        eixo.margins(x=0.01)
 
         if sinal_hdb3:
             x = []
@@ -345,6 +373,7 @@ class InterfaceHDB3(tk.Tk):
         else:
             eixo.set_xlim(0, 1)
 
+        canvas.figure.tight_layout(pad=1.2)
         canvas.draw()
 
     def _lista_para_texto(self, valores):
