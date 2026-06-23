@@ -16,7 +16,6 @@ from pipeline import (
     processar_emissao,
 )
 
-
 class InterfaceHDB3(tk.Tk):
     def __init__(self):
         super().__init__()
