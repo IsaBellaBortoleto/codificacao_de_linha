@@ -174,7 +174,7 @@ class InterfaceHDB3(tk.Tk):
         frame = ttk.Frame(parent, padding=8)
         frame.pack(fill="both", expand=True)
 
-        figura = Figure(figsize=(10, 3.4), dpi=100, constrained_layout=True)
+        figura = Figure(figsize=(10, 3.4), dpi=100)
         eixo = figura.add_subplot(111)
         canvas = FigureCanvasTkAgg(figura, master=frame)
         canvas.get_tk_widget().pack(fill="both", expand=True)
