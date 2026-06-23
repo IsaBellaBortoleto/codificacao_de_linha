@@ -8,6 +8,7 @@ payloads seriais usados pelos arquivos .ino.
 
 import ast
 import json
+import time
 
 try:
     from src.utils.ascii_converter import binario_para_texto, texto_para_binario
@@ -172,24 +173,40 @@ def fechar_serial(conexao) -> None:
         conexao.close()
 
 
+def _ler_json_serial(conexao, timeout_segundos: float = 3.0) -> dict | None:
+    fim = time.monotonic() + timeout_segundos
+
+    while time.monotonic() < fim:
+        linha = conexao.readline().decode("utf-8", errors="ignore").strip()
+        if not linha:
+            continue
+
+        try:
+            return json.loads(linha)
+        except json.JSONDecodeError:
+            # Algumas placas imprimem logs de boot ou texto solto ao abrir a serial.
+            continue
+
+    return None
+
+
 def enviar_emissao_serial(porta: str, resultado_emissao: dict, baud: int = BAUD_RATE) -> dict:
     payload = montar_payload_envio(resultado_emissao)
 
     with abrir_serial(porta, baud) as conexao:
         conexao.timeout = 2
+        time.sleep(2)
+        conexao.reset_input_buffer()
+
         linha_envio = json.dumps(payload, separators=(",", ":")) + "\n"
         conexao.write(linha_envio.encode("utf-8"))
-        linha = conexao.readline().decode("utf-8", errors="ignore").strip()
+        resposta = _ler_json_serial(conexao, timeout_segundos=3)
 
-    if not linha:
+    if resposta is None:
         return {"status": "sem_resposta"}
 
-    return json.loads(linha)
+    return resposta
 
 
 def ler_payload_serial(conexao) -> dict | None:
-    linha = conexao.readline().decode("utf-8", errors="ignore").strip()
-    if not linha:
-        return None
-
-    return json.loads(linha)
+    return _ler_json_serial(conexao, timeout_segundos=1)
