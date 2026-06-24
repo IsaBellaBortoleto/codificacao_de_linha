@@ -16,6 +16,14 @@ from pipeline import (
     processar_emissao,
 )
 
+
+SLAVES_CONHECIDAS = {
+    
+    "a4:f0:0f:67:5b:68": "Slave 1",
+    "b0:cb:d8:99:c9:c8": "Slave 2",
+}
+
+
 class InterfaceHDB3(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -26,6 +34,7 @@ class InterfaceHDB3(tk.Tk):
         self.resultado_emissao = None
         self.serial_recepcao = None
         self.recebendo = False
+        self.slaves_detectadas = {}
 
         self._criar_widgets()
 
@@ -275,7 +284,8 @@ class InterfaceHDB3(tk.Tk):
             return
 
         self._mostrar_recepcao(resultado)
-        self.status_recepcao.set("Mensagem recebida da ESP master.")
+        origem = self._identificar_slave(payload)
+        self.status_recepcao.set(f"Mensagem recebida da {origem} via ESP master.")
 
     def _mostrar_recepcao(self, resultado):
         self._preencher_campo(
@@ -307,6 +317,21 @@ class InterfaceHDB3(tk.Tk):
             raise ValueError("Digite a chave XOR.")
 
         return chave.encode("latin-1")
+
+    def _identificar_slave(self, payload):
+        mac = payload.get("from")
+        if not mac:
+            return "ESP slave desconhecida"
+
+        mac = mac.upper()
+        if mac in SLAVES_CONHECIDAS:
+            return f"{SLAVES_CONHECIDAS[mac]} ({mac})"
+
+        if mac not in self.slaves_detectadas:
+            numero = len(self.slaves_detectadas) + 1
+            self.slaves_detectadas[mac] = f"Slave {numero}"
+
+        return f"{self.slaves_detectadas[mac]} ({mac})"
 
     def _listar_portas(self):
         return listar_portas_seriais()
