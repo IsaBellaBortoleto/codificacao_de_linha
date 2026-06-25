@@ -1,4 +1,5 @@
 # Codificação de Linha HDB3 — Trabalho de Comunicação de Dados
+
 ## Comunicação entre computadores via ESP32 + ESP-NOW, com interface Python
 
 UTFPR Curitiba — Comunicação de Dados
@@ -385,3 +386,10 @@ O resultado bate símbolo a símbolo com a Figura 4.20.
   destacar os símbolos B/V com cores ou rótulos.
 - **Caracteres Unicode** fora de 0–255 (—, €, emojis) são rejeitados por não caberem no
   ASCII estendido.
+
+
+## ⚠️ Disclaimer
+
+Na primeira execução no **Windows**, ao tentar enviar ou receber dados, pode aparecer uma mensagem de erro. Isso é normal e não indica um problema real — **basta ignorar a mensagem e tentar novamente**. Os dados serão processados corretamente na segunda tentativa.
+
+Essas instabilidades **não ocorrem no Linux**, onde a comunicação funciona de forma estável desde a primeira execução.
