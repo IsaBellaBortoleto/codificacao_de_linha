@@ -9,9 +9,13 @@ Algoritmo sorteado para a equipe: **HDB3** (item 11 da lista de algoritmos)
 ## Visão Geral
 
 Este projeto implementa a codificação de linha **HDB3 (High-Density Bipolar 3-zero
-substitution)** num sistema de comunicação real entre **dois computadores**, usando
-**ESP32** como rádios de enlace (protocolo **ESP-NOW**, peer-to-peer, sem roteador
-Wi-Fi) e uma **interface gráfica desktop em Python**.
+substitution)** num sistema de comunicação real entre **vários computadores** — **dois
+emissores** e **um servidor receptor** — usando **três ESP32** como rádios de enlace
+(protocolo **ESP-NOW**, peer-to-peer, sem roteador Wi-Fi) e uma **interface gráfica
+desktop em Python**.
+
+A topologia é **2 Slaves → 1 Master**: cada emissor tem uma ESP32 **Slave** e o servidor
+tem uma ESP32 **Master** que recebe os dois.
 
 Decisão de arquitetura importante: **todo o processamento é feito no PC, em Python.**
 Os ESP32 funcionam apenas como **rádios repassadores** — não fazem HDB3, XOR nem
@@ -19,7 +23,7 @@ conversão ASCII. Isso mantém a lógica do trabalho num só lugar (fácil de de
 depurar) e usa o ESP-NOW só como "fio sem fio" entre as máquinas.
 
 ```
-[ PC A — Emissor ]                                     [ PC B — Receptor ]
+[ PC Emissor (Slave 1 ou 2) ]                          [ Servidor — Receptor ]
  digita o texto                                          mostra o texto recuperado
  → XOR encrypt        (Python)                           ↑ XOR decrypt        (Python)
  → ASCII → binário    (Python)                           ↑ binário → ASCII    (Python)
@@ -29,7 +33,7 @@ depurar) e usa o ESP-NOW só como "fio sem fio" entre as máquinas.
         │                                                       │
    USB Serial                                              USB Serial
         ▼                                                       ▲
-  [ ESP32 SLAVE ]  ──────── ESP-NOW (rádio 2.4 GHz) ────►  [ ESP32 MASTER ]
+  [ ESP32 SLAVE 1/2 ] ─────── ESP-NOW (rádio 2.4 GHz) ───►  [ ESP32 MASTER ]
    repassa os bytes                                         repassa os bytes
 ```
 
@@ -61,22 +65,35 @@ um serviço externo ✅.
 
 ## Arquitetura de hardware
 
+São **três ESP32**: duas **Slaves** (uma em cada PC emissor) e uma **Master** (no
+servidor receptor). As duas Slaves transmitem para a mesma Master via ESP-NOW.
+
 ```
-PC A (USB)──[ESP32 SLAVE]  ····ESP-NOW 2.4 GHz····  [ESP32 MASTER]──(USB) PC B
-            transmite                                recebe
+                    [ Servidor — Receptor (PC) ]
+                              │ USB Serial
+                       [ ESP32 MASTER ]        ← Host B
+                              ▲
+                              │  ESP-NOW (rádio 2.4 GHz)
+                ┌─────────────┴─────────────┐
+                │                           │
+         [ ESP32 SLAVE 1 ]           [ ESP32 SLAVE 2 ]   ← Host A
+                │ USB                       │ USB
+        [ PC Emissor 1 ]            [ PC Emissor 2 ]
 ```
 
-- **ESP32 Slave** = lado do **Host A (emissor)**: recebe a string HDB3 do PC A pela
-  Serial e a transmite via ESP-NOW para o Master.
-- **ESP32 Master** = lado do **Host B (receptor)**: recebe o pacote ESP-NOW e o repassa
-  ao PC B pela Serial.
+- **ESP32 Slave 1 e Slave 2** = lado do **Host A (emissores)**: cada uma recebe a string
+  HDB3 do seu PC pela Serial e a transmite via ESP-NOW para a Master.
+- **ESP32 Master** = lado do **Host B (receptor)**: aceita pacotes de **qualquer** Slave
+  e os repassa ao servidor pela Serial. O JSON do Master inclui o campo `from` com o MAC
+  da Slave de origem, então dá para saber qual emissor enviou.
 - O enlace **ESP-NOW** é um protocolo da Espressif baseado em 802.11, porém sem
   roteador ou ponto de acesso — dispositivo a dispositivo. É isso que garante que a
-  comunicação **não é localhost**: os dois PCs estão fisicamente separados, ligados por
-  rádio.
+  comunicação **não é localhost**: os computadores estão fisicamente separados, ligados
+  por rádio.
 
-> A interface também permite escolher entre **Slave 1** e **Slave 2** (duas portas
-> configuráveis), caso a equipe use mais de um transmissor.
+> Na aba *Emissão*, o operador escolhe **Slave 1** ou **Slave 2** (cada uma com sua porta
+> COM). As duas Slaves rodam o **mesmo** firmware [`esp32_slave.ino`](esp32_slave.ino) —
+> basta gravá-lo nas duas placas, ambas apontando para o MAC da Master.
 
 ---
 
@@ -316,7 +333,8 @@ void loop(){}
 
 ### 3. Configurar e gravar os firmwares
 - Em [`esp32_slave.ino`](esp32_slave.ino), atualize `MASTER_MAC` com o MAC do Master.
-- Grave `esp32_slave.ino` no(s) transmissor(es) e `esp32_master.ino` no receptor.
+- Grave `esp32_slave.ino` nas **duas placas Slave** (mesmo sketch nas duas) e
+  `esp32_master.ino` na placa Master (servidor).
 - No Arduino IDE, `WiFi` e `esp_now` já vêm no core ESP32.
 
 ### 4. Rodar a interface (em cada PC)
